@@ -59,7 +59,7 @@ pub fn listen_mpd_client(
                 }
                 Ok(s) => s.volume
             };
-            if volume != last_volume {
+            if volume != last_volume && volume != 0 {
                 let action_volume = match volume.try_into() {
                     Ok(v) => v,
                     Err(e) => {
@@ -129,12 +129,12 @@ pub fn reflect_volume_to_mpd(address: &str, mut volume_signal_rx: watch::WatchRe
         connection_failed = false;
         let initial_signal = volume_signal_rx.get();
         if let Err(e) = handle_volume_signal_in_mpd(address, &mut conn, &initial_signal) {
-            error!("S/{address}: Failed to execute action: {e:?}");
+            error!("S/{address}: Failed to execute action for {initial_signal:?}: {e:?}");
         }
         loop {
             let signal = volume_signal_rx.wait();
             if let Err(e) = handle_volume_signal_in_mpd(address, &mut conn, &signal) {
-                error!("S/{address}: Failed to execute action: {e:?}");
+                error!("S/{address}: Failed to execute action for {initial_signal:?}: {e:?}");
                 sleep(Duration::from_millis(2000));
                 break;
             }
